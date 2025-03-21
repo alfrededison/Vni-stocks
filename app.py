@@ -4,7 +4,7 @@ import pandas_ta as ta
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.combining import OrTrigger
 from apscheduler.triggers.cron import CronTrigger
-from flask import Flask
+from flask import Flask, redirect
 
 
 # import os
@@ -15,6 +15,12 @@ from flask import Flask
 
 _VNI = "VN30F1M"
 stock = Vnstock().stock(symbol=_VNI, source="VCI")
+
+start, end, interval = 30, 0, "1H"
+ma, ema, rsi, marsi = 5, 3, 14, 3
+
+global_data = None
+last_update = None
 
 
 def get_past_date(x):
@@ -40,7 +46,32 @@ def emamarsi(close, ma, ema, rsi, marsi):
     rsi_up = ta.above(rsi_, marsi_)
     buy = ta.cross(ema_, sma_) & rsi_up
     sell = ta.cross(sma_, ema_)
-    return buy, sell
+    return sma_, ema_, rsi_, marsi_, buy, sell
+
+
+def update_data(start, end, interval, ma, ema, rsi, marsi):
+    """Update global states with new stock data and calculations."""
+    global global_data, last_update
+    data = get_stock_data(start=start, end=end, interval=interval)
+    sma_, ema_, rsi_, marsi_, buy, sell = emamarsi(
+        data.close,
+        ma,
+        ema,
+        rsi,
+        marsi,
+    )
+
+    global_data = data.join(
+        [
+            sma_,
+            ema_,
+            rsi_,
+            marsi_,
+            buy.rename("Buy"),
+            sell.rename("Sell"),
+        ]
+    )
+    last_update = datetime.now()
 
 
 def send_discord(data):
@@ -79,37 +110,30 @@ def build_discord_msg(content, title, desciption, color):
     }
 
 
-def main():
-    print(datetime.now())
-
-    data = get_stock_data(start=30, end=0, interval="1H")
-    print(data.tail())
-
-    ma = 5
-    ema = 3
-    rsi = 14
-    marsi = 3
-    buy, sell = emamarsi(data.close, ma, ema, rsi, marsi)
-    print(buy.tail())
-    print(sell.tail())
-
-    is_buy = bool(buy[-1])
-    is_sell = bool(sell[-1])
+def process_signal():
+    time = global_data.index[-1]
+    price = global_data.close.iloc[-1]
+    is_buy = bool(global_data.Buy.iloc[-1])
+    is_sell = bool(global_data.Sell.iloc[-1])
 
     action = "BUY" if is_buy else "SELL" if is_sell else None
 
-    if action:
-        color = color_selector(is_buy, is_sell)
-        content = f"*{_VNI}* **{action}** {data.close[-1]}"
-        title = f"Strategy: EMA({ema}) SMA({ma}) RSI({rsi}) MARSI({marsi})"
-        description = f"__{data.index[-1]}__ **{action}** @ {data.close[-1]}"
+    if action is None:
+        return f"__{time}__ No signal"
 
-        msgdata = build_discord_msg(content, title, description, color)
-        print(msgdata)
-        resp = send_discord(msgdata)
-        print(resp.status_code, resp.reason)
-    else:
-        print(f"__{data.index[-1]}__ No signal")
+    color = color_selector(is_buy, is_sell)
+    content = f"*{_VNI}* **{action}** {price}"
+    title = f"Strategy: EMA({ema}) SMA({ma}) RSI({rsi}) MARSI({marsi})"
+    description = f"__{time}__ **{action}** @ {price}"
+
+    return build_discord_msg(content, title, description, color)
+
+
+def main():
+    update_data(start, end, interval, ma, ema, rsi, marsi)
+    msg = process_signal()
+    if isinstance(msg, dict):
+        send_discord(msg)
 
 
 sched = BackgroundScheduler(daemon=True)
@@ -127,8 +151,32 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    """Function for test purposes."""
-    return "Welcome Home :) !"
+    """Show next trigger run time."""
+    next_run = sched.get_jobs()[0].next_run_time
+    return f"Welcome Home :) Next trigger at: {next_run}"
+
+
+@app.route("/update")
+def update():
+    """Update stock data and calculations."""
+    update_data(start, end, interval, ma, ema, rsi, marsi)
+    return redirect("/status")
+
+
+@app.route("/status")
+def status():
+    """Show current global state values."""
+    if global_data is None:
+        return "No data available."
+    return f"Last update: {last_update} <br> {global_data.tail(10).to_html()}"
+
+
+@app.route("/signal")
+def signal():
+    """Send signal to Discord."""
+    if global_data is None:
+        return "No data available."
+    return process_signal()
 
 
 if __name__ == "__main__":
