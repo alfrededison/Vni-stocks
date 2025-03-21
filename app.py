@@ -1,6 +1,10 @@
 from datetime import datetime, timedelta
 from vnstock import Vnstock
 import pandas_ta as ta
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.combining import OrTrigger
+from apscheduler.triggers.cron import CronTrigger
+from flask import Flask
 
 
 # import os
@@ -76,6 +80,8 @@ def build_discord_msg(content, title, desciption, color):
 
 
 def main():
+    print(datetime.now())
+
     data = get_stock_data(start=30, end=0, interval="1H")
     print(data.tail())
 
@@ -106,5 +112,24 @@ def main():
         print(f"__{data.index[-1]}__ No signal")
 
 
+sched = BackgroundScheduler(daemon=True)
+trigger = OrTrigger(
+    [
+        CronTrigger(day_of_week="mon-fri", hour="9-11", minute="*/15"),
+        CronTrigger(day_of_week="mon-fri", hour="13-14", minute="*/15"),
+    ]
+)
+sched.add_job(main, trigger)
+sched.start()
+
+app = Flask(__name__)
+
+
+@app.route("/")
+def home():
+    """Function for test purposes."""
+    return "Welcome Home :) !"
+
+
 if __name__ == "__main__":
-    main()
+    app.run()
