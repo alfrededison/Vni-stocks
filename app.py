@@ -1,22 +1,21 @@
 from datetime import datetime, timedelta
-from vnstock import Vnstock
 import pandas_ta as ta
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.combining import OrTrigger
 from apscheduler.triggers.cron import CronTrigger
 from flask import Flask, redirect
 
+from vci import history
 
 # import os
 # import time
 # os.environ["TZ"] = "Asia/Ho_Chi_Minh"
 # time.tzset()
 
+_VN30 = "VN30F1M"
+_PHAISINH = "derivative"
 
-_VNI = "VN30F1M"
-stock = Vnstock().stock(symbol=_VNI, source="VCI")
-
-start, end, interval = 30, 0, "1H"
+start, end, interval = 9, 0, "1H"
 ma, ema, rsi, marsi = 5, 3, 14, 3
 
 global_data = None
@@ -28,9 +27,10 @@ def get_past_date(x):
     return past_date.strftime("%Y-%m-%d")
 
 
-def get_stock_data(start, end, symbol=_VNI, interval="1D"):
-    return stock.quote.history(
-        symbol=symbol,
+def get_stock_data(start, end, interval="1D"):
+    return history(
+        symbol=_VN30,
+        asset_type=_PHAISINH,
         start=get_past_date(start),
         end=get_past_date(end),
         interval=interval,
@@ -98,7 +98,7 @@ def color_selector(is_buy, is_sell):
 
 def build_discord_msg(content, title, desciption, color):
     return {
-        "username": _VNI,
+        "username": _VN30,
         "content": content,
         "embeds": [
             {
@@ -122,7 +122,7 @@ def process_signal():
         return f"__{time}__ No signal"
 
     color = color_selector(is_buy, is_sell)
-    content = f"*{_VNI}* **{action}** {price}"
+    content = f"*{_VN30}* **{action}** {price}"
     title = f"Strategy: EMA({ema}) SMA({ma}) RSI({rsi}) MARSI({marsi})"
     description = f"__{time}__ **{action}** @ {price}"
 
