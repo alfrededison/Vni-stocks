@@ -3,23 +3,22 @@ import pandas_ta as ta
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.combining import OrTrigger
 from apscheduler.triggers.cron import CronTrigger
-from flask import Flask, redirect
+from flask import Flask
 
 from vci import history
 
-# import os
-# import time
-# os.environ["TZ"] = "Asia/Ho_Chi_Minh"
-# time.tzset()
+import os
+import time
+
+os.environ["TZ"] = "Asia/Ho_Chi_Minh"
+if hasattr(time, "tzset"):
+    time.tzset()
 
 _VN30 = "VN30F1M"
 _PHAISINH = "derivative"
 
 start, end, interval = 9, 0, "1H"
 ma, ema, rsi, marsi = 5, 3, 14, 3
-
-global_data = None
-last_update = None
 
 
 def get_past_date(x):
@@ -50,8 +49,7 @@ def emamarsi(close, ma, ema, rsi, marsi):
 
 
 def update_data(start, end, interval, ma, ema, rsi, marsi):
-    """Update global states with new stock data and calculations."""
-    global global_data, last_update
+    """Update states with new stock data and calculations."""
     data = get_stock_data(start=start, end=end, interval=interval)
     sma_, ema_, rsi_, marsi_, buy, sell = emamarsi(
         data.close,
@@ -61,7 +59,7 @@ def update_data(start, end, interval, ma, ema, rsi, marsi):
         marsi,
     )
 
-    global_data = data.join(
+    updated_data = data.join(
         [
             sma_,
             ema_,
@@ -71,7 +69,7 @@ def update_data(start, end, interval, ma, ema, rsi, marsi):
             sell.rename("Sell"),
         ]
     )
-    last_update = datetime.now()
+    return updated_data
 
 
 def send_discord(data):
@@ -110,11 +108,11 @@ def build_discord_msg(content, title, desciption, color):
     }
 
 
-def process_signal():
-    time = global_data.index[-1]
-    price = global_data.close.iloc[-1]
-    is_buy = bool(global_data.Buy.iloc[-1])
-    is_sell = bool(global_data.Sell.iloc[-1])
+def process_signal(data):
+    time = data.index[-1]
+    price = data.close.iloc[-1]
+    is_buy = bool(data.Buy.iloc[-1])
+    is_sell = bool(data.Sell.iloc[-1])
 
     action = "BUY" if is_buy else "SELL" if is_sell else None
 
@@ -130,8 +128,8 @@ def process_signal():
 
 
 def main():
-    update_data(start, end, interval, ma, ema, rsi, marsi)
-    msg = process_signal()
+    data = update_data(start, end, interval, ma, ema, rsi, marsi)
+    msg = process_signal(data)
     if isinstance(msg, dict):
         send_discord(msg)
 
@@ -151,32 +149,16 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    """Show next trigger run time."""
+    """Show status."""
     next_run = sched.get_jobs()[0].next_run_time
-    return f"Welcome Home :) Next trigger at: {next_run}"
-
-
-@app.route("/update")
-def update():
-    """Update stock data and calculations."""
-    update_data(start, end, interval, ma, ema, rsi, marsi)
-    return redirect("/status")
-
-
-@app.route("/status")
-def status():
-    """Show current global state values."""
-    if global_data is None:
-        return "No data available."
-    return f"Last update: {last_update} <br> {global_data.tail(10).to_html()}"
-
-
-@app.route("/signal")
-def signal():
-    """Send signal to Discord."""
-    if global_data is None:
-        return "No data available."
-    return process_signal()
+    data = update_data(start, end, interval, ma, ema, rsi, marsi)
+    return "<br/>".join(
+        [
+            f"Welcome Home 🏡 Next trigger at: <strong>{next_run}</strong>",
+            data.tail(10).to_html(),
+            process_signal(data),
+        ]
+    )
 
 
 if __name__ == "__main__":
