@@ -20,6 +20,8 @@ _PHAISINH = "derivative"
 start, end, interval = 9, 0, "1H"
 ma, ema, rsi, marsi = 5, 3, 14, 3
 
+app = Flask(__name__)
+
 
 def get_past_date(x):
     past_date = datetime.today() - timedelta(days=x)
@@ -69,6 +71,7 @@ def update_data(start, end, interval, ma, ema, rsi, marsi):
             sell.rename("Sell"),
         ]
     )
+    app.logger.info("Data updated successfully")
     return updated_data
 
 
@@ -130,8 +133,10 @@ def process_signal(data):
 def main():
     data = update_data(start, end, interval, ma, ema, rsi, marsi)
     msg = process_signal(data)
+    app.logger.info(f"Signal: {msg}")
     if isinstance(msg, dict):
-        send_discord(msg)
+        resp = send_discord(msg)
+        app.logger.info(f"Discord response: {resp.status_code}")
 
 
 sched = BackgroundScheduler(daemon=True)
@@ -143,8 +148,6 @@ trigger = OrTrigger(
 )
 sched.add_job(main, trigger)
 sched.start()
-
-app = Flask(__name__)
 
 
 @app.route("/")
