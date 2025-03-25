@@ -1,167 +1,64 @@
-from datetime import datetime, timedelta
-import pandas_ta as ta
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.combining import OrTrigger
-from apscheduler.triggers.cron import CronTrigger
+import pytz
+from datetime import datetime
 from flask import Flask
-
-from vci import history
-
 import os
 import time
+
+from builder import data_builder, signal_builder
+from const import TYPE_DERIVATIVE, VN30_DISCORD_URL
+from discord import send_discord
 
 os.environ["TZ"] = "Asia/Ho_Chi_Minh"
 if hasattr(time, "tzset"):
     time.tzset()
 
 _VN30 = "VN30F1M"
-_PHAISINH = "derivative"
 
 start, end, interval = 9, 0, "1H"
 ma, ema, rsi, marsi = 5, 3, 14, 3
 
+current_file_path = os.path.dirname(os.path.abspath(__file__))
+data_file_path = os.path.join(current_file_path, "data.csv")
+
 app = Flask(__name__)
 
 
-def get_past_date(x):
-    past_date = datetime.today() - timedelta(days=x)
-    return past_date.strftime("%Y-%m-%d")
+@app.route("/")
+def home():
+    """Show status."""
+    try:
+        from pandas import read_csv
+        data = read_csv(data_file_path)
+        return data.tail(10).to_html()
+    except FileNotFoundError:
+        return "No data available."
 
 
-def get_stock_data(start, end, interval="1D"):
-    return history(
-        symbol=_VN30,
-        asset_type=_PHAISINH,
-        start=get_past_date(start),
-        end=get_past_date(end),
-        interval=interval,
-    ).set_index("time")
-
-
-def emamarsi(close, ma, ema, rsi, marsi):
-    sma_ = ta.sma(close, length=ma)
-    ema_ = ta.ema(close, length=ema)
-    rsi_ = ta.rsi(close, length=rsi)
-    marsi_ = ta.sma(rsi_, length=marsi)
-
-    rsi_up = ta.above(rsi_, marsi_)
-    buy = ta.cross(ema_, sma_) & rsi_up
-    sell = ta.cross(sma_, ema_)
-    return sma_, ema_, rsi_, marsi_, buy, sell
-
-
-def update_data(start, end, interval, ma, ema, rsi, marsi):
-    """Update states with new stock data and calculations."""
-    data = get_stock_data(start=start, end=end, interval=interval)
-    sma_, ema_, rsi_, marsi_, buy, sell = emamarsi(
-        data.close,
+@app.route("/trigger")
+def trigger():
+    """Trigger the job."""
+    title = f"Strategy: EMA({ema}) SMA({ma}) RSI({rsi}) MARSI({marsi})"
+    data = data_builder(
+        _VN30,
+        TYPE_DERIVATIVE,
+        start,
+        end,
+        interval,
         ma,
         ema,
         rsi,
         marsi,
     )
 
-    updated_data = data.join(
-        [
-            sma_,
-            ema_,
-            rsi_,
-            marsi_,
-            buy.rename("Buy"),
-            sell.rename("Sell"),
-        ]
-    )
-    app.logger.info("Data updated successfully")
-    return updated_data
+    triggered, msg = signal_builder(_VN30, title, data)
+    app.logger.info(f"Signal: {triggered} {msg}")
 
-
-def send_discord(data):
-    import requests
-    import json
-
-    url = (
-        "https://discord.com/api/webhooks/1248546907534528532/"
-        "AJxoxGHJoZRt1zGobHoH6U-ZhM0ETHqg8bUgyu3BhxcSNKFG_ucYmIsQjyL_Cx5J8Cv0"
-    )
-
-    return requests.post(
-        url,
-        data=json.dumps(data),
-        headers={
-            "Content-Type": "application/json",
-        },
-    )
-
-
-def color_selector(is_buy, is_sell):
-    return 43127 if is_buy else 15859772 if is_sell else 0
-
-
-def build_discord_msg(content, title, desciption, color):
-    return {
-        "username": _VN30,
-        "content": content,
-        "embeds": [
-            {
-                "title": title,
-                "description": desciption,
-                "color": color,
-            },
-        ],
-    }
-
-
-def process_signal(data):
-    time = data.index[-1]
-    price = data.close.iloc[-1]
-    is_buy = bool(data.Buy.iloc[-1])
-    is_sell = bool(data.Sell.iloc[-1])
-
-    action = "BUY" if is_buy else "SELL" if is_sell else None
-
-    if action is None:
-        return f"__{time}__ No signal"
-
-    color = color_selector(is_buy, is_sell)
-    content = f"*{_VN30}* **{action}** {price}"
-    title = f"Strategy: EMA({ema}) SMA({ma}) RSI({rsi}) MARSI({marsi})"
-    description = f"__{time}__ **{action}** @ {price}"
-
-    return build_discord_msg(content, title, description, color)
-
-
-def main():
-    data = update_data(start, end, interval, ma, ema, rsi, marsi)
-    msg = process_signal(data)
-    app.logger.info(f"Signal: {msg}")
-    if isinstance(msg, dict):
-        resp = send_discord(msg)
+    if triggered:
+        resp = send_discord(VN30_DISCORD_URL, msg)
         app.logger.info(f"Discord response: {resp.status_code}")
 
-
-sched = BackgroundScheduler(daemon=True)
-trigger = OrTrigger(
-    [
-        CronTrigger(day_of_week="mon-fri", hour="9-11", minute="*/15"),
-        CronTrigger(day_of_week="mon-fri", hour="13-14", minute="*/15"),
-    ]
-)
-sched.add_job(main, trigger)
-sched.start()
-
-
-@app.route("/")
-def home():
-    """Show status."""
-    next_run = sched.get_jobs()[0].next_run_time
-    data = update_data(start, end, interval, ma, ema, rsi, marsi)
-    return "<br/>".join(
-        [
-            f"Welcome Home 🏡 Next trigger at: <strong>{next_run}</strong>",
-            data.tail(10).to_html(),
-            process_signal(data),
-        ]
-    )
+    data.to_csv(data_file_path)
+    return f"[{datetime.now(pytz.utc)}] {triggered} {msg}"
 
 
 if __name__ == "__main__":
