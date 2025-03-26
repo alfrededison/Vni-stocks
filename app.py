@@ -19,6 +19,8 @@ ma, ema, rsi, marsi = 5, 3, 14, 5
 
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 data_file_path = os.path.join(current_file_path, "data.csv")
+style_file_path = os.path.join(current_file_path, "style.css")
+script_file_path = os.path.join(current_file_path, "script.js")
 
 app = Flask(__name__)
 
@@ -29,7 +31,9 @@ def home():
     try:
         from pandas import read_csv
         data = read_csv(data_file_path)
-        return data.tail(10).to_html()
+        style = open(style_file_path).read()
+        script = open(script_file_path).read()
+        return f"<style>{style}</style>{data.tail(20).to_html()}<script>{script}</script>"
     except FileNotFoundError:
         return "No data available."
 

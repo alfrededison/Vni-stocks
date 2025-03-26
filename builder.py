@@ -18,7 +18,7 @@ def emamarsi(close, ma, ema, rsi, marsi):
 
     price_up = ta.roc(close, length=1) > 0
     rsi_up = ta.above(rsi_, marsi_)
-    buy = ta.cross(ema_, sma_) & rsi_up & price_up
+    buy = ta.cross(ema_, sma_) & rsi_up & price_up.astype(int)
     sell = ta.cross(sma_, ema_)
     return sma_, ema_, rsi_, marsi_, buy, sell
 
