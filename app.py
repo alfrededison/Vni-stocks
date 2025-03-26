@@ -15,7 +15,7 @@ if hasattr(time, "tzset"):
 _VN30 = "VN30F1M"
 
 start, end, interval = 9, 0, "1H"
-ma, ema, rsi, marsi = 5, 3, 14, 3
+ma, ema, rsi, marsi = 5, 3, 14, 5
 
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 data_file_path = os.path.join(current_file_path, "data.csv")
