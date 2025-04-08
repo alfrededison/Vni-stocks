@@ -2,7 +2,8 @@ from datetime import datetime, timedelta
 import pandas_ta as ta
 
 from const import DISCORD_POSITIVE_COLOR, DISCORD_NEGATIVE_COLOR, DISCORD_NEUTRAL_COLOR
-from vci import history
+from vci import history as vci_history
+from tcbs import history as tcbs_history
 
 
 def get_past_date(x):
@@ -23,15 +24,28 @@ def emamarsi(close, ma, ema, rsi, marsi):
     return sma_, ema_, rsi_, marsi_, buy, sell
 
 
-def data_builder(symbol, asset_type, since, to, interval, ma, ema, rsi, marsi):
+def data_builder(source, symbol, asset_type, since, to, interval, ma, ema, rsi, marsi):
     """Build stock data and technical calculations."""
-    raw_data = history(
-        symbol=symbol,
-        asset_type=asset_type,
-        start=get_past_date(since),
-        end=get_past_date(to),
-        interval=interval,
-    ).set_index("time")
+    if source == "vci":
+        raw_data = vci_history(
+            symbol=symbol,
+            asset_type=asset_type,
+            start=get_past_date(since),
+            end=get_past_date(to),
+            interval=interval,
+        )
+    elif source == "tcbs":
+        raw_data = tcbs_history(
+            symbol=symbol,
+            asset_type=asset_type,
+            end=get_past_date(to),
+            interval=interval,
+            count_back=since,
+        )
+    else:
+        raise ValueError("Invalid source. Choose 'vci' or 'tcbs'.")
+
+    raw_data = raw_data.set_index("time")
 
     sma_, ema_, rsi_, marsi_, buy, sell = emamarsi(
         raw_data.close,
@@ -46,7 +60,7 @@ def data_builder(symbol, asset_type, since, to, interval, ma, ema, rsi, marsi):
             sma_,
             ema_,
             rsi_,
-            marsi_,
+            marsi_.rename("MARSI"),
             buy.rename("Buy"),
             sell.rename("Sell"),
         ]

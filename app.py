@@ -15,7 +15,7 @@ if hasattr(time, "tzset"):
 
 _VN30 = "VN30F1M"
 
-start, end, interval = 9, 0, "1H"
+start, end, interval = 30, -1, "1H"
 ma, ema, rsi, marsi = 5, 3, 14, 5
 
 current_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -59,6 +59,7 @@ def trigger():
     """Trigger the job."""
     title = f"Strategy: EMA({ema}) SMA({ma}) RSI({rsi}) MARSI({marsi})"
     data = data_builder(
+        "tcbs",
         _VN30,
         TYPE_DERIVATIVE,
         start,
