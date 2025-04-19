@@ -71,6 +71,35 @@ def home():
         total = len(stocks)
         newH = len(stocks.loc[stocks.percent1YearFromPeak > 0])
         newL = len(stocks.loc[stocks.percent1YearFromBottom < 0])
+
+        growth = stocks.loc[
+            True
+            & (stocks.revenueGrowth1Year >= 7)
+            & (stocks.revenueGrowth5Year >= 7)
+            & (stocks.epsGrowth1Year >= 10)
+            & (stocks.epsGrowth5Year >= 10)
+            & (stocks.lastQuarterProfitGrowth >= 10)
+            & (stocks.secondQuarterProfitGrowth >= 10)
+            & (stocks.netMargin >= 0)
+            & (stocks.profitForTheLast4Quarters >= 0)
+            & (stocks.avgTradingValue5Day >= 1)
+            & True,
+            [
+                "ticker",
+                "revenueGrowth1Year",
+                "revenueGrowth5Year",
+                "epsGrowth1Year",
+                "epsGrowth5Year",
+                "lastQuarterProfitGrowth",
+                "secondQuarterProfitGrowth",
+                "netMargin",
+                "profitForTheLast4Quarters",
+                "avgTradingValue5Day",
+                "hasFinancialReport.en",
+                "relativeStrength3Day",
+                "relativeStrength1Month",
+            ],
+        ].set_index("ticker")
     except FileNotFoundError:
         total = 0
         newH = 0
@@ -92,6 +121,7 @@ def home():
         newL=newL,
         last_triggered=last_triggered,
         last_filtered=last_filtered,
+        filtered_stocks=growth,
     )
 
 
