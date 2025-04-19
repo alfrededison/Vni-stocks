@@ -29,7 +29,7 @@
         <section id="vn30f1m">
             <h2>Signal table</h2>
             <div>Last trigger: {{ last_triggered }}</div>
-            {{ vn30f1m.tail(20).to_html()|safe }}
+            {{ vn30f1m.to_html()|safe }}
         </section>
         <section id="vnstock">
             <h2>VNStock</h2>
@@ -61,47 +61,4 @@
     <footer>
         <p>&copy; 2025 Hieu Nguyen. All rights reserved.</p>
     </footer>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            document.getElementById("vn30f1m").querySelectorAll("table tr").forEach(row => {
-                const lastCell = row.querySelector("td:last-child");
-                const secondLastCell = row.querySelector("td:nth-last-child(2)");
-                const sixthCell = row.querySelector("td:nth-child(6)");
-
-                if (lastCell && lastCell.textContent.trim() === "1") {
-                    lastCell.style.backgroundColor = "red";
-                    if (sixthCell) {
-                        sixthCell.style.backgroundColor = "red";
-                    }
-                }
-                if (secondLastCell && secondLastCell.textContent.trim() === "1") {
-                    secondLastCell.style.backgroundColor = "green";
-                    if (sixthCell) {
-                        sixthCell.style.backgroundColor = "green";
-                    }
-                }
-
-                const rsiRow = row.querySelector("td:nth-last-child(4)");
-                const marsiRow = row.querySelector("td:nth-last-child(3)");
-                const emaRow = row.querySelector("td:nth-last-child(5)");
-                const maRow = row.querySelector("td:nth-last-child(6)");
-                
-                const rsi = Number(rsiRow?.textContent);
-                const marsi = Number(marsiRow?.textContent);
-                const ema = Number(emaRow?.textContent);
-                const ma = Number(maRow?.textContent);
-
-                if (rsi && rsi > marsi) {
-                    rsiRow.style.fontWeight = "bold";
-                }
-                if (ema && ema > ma) {
-                    emaRow.style.fontWeight = "bold";
-                } else if (ma && ma > ema) {
-                    maRow.style.fontWeight = "bold";
-                }
-            });
-        });
-    </script>
-
 </html>

@@ -9,6 +9,7 @@ from builder import data_builder, signal_builder
 from const import TYPE_DERIVATIVE, VN30_DISCORD_URL
 from discord import send_discord
 from tcbs import stock_screening_insights
+from utils import format_dataframe
 
 os.environ["TZ"] = "Asia/Ho_Chi_Minh"
 if hasattr(time, "tzset"):
@@ -85,7 +86,7 @@ def home():
 
     return render_template(
         "home.html",
-        vn30f1m=data,
+        vn30f1m=format_dataframe(data.tail(10)),
         total=total,
         newH=newH,
         newL=newL,
