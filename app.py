@@ -1,3 +1,4 @@
+import json
 import pytz
 from datetime import datetime
 from flask import Flask, render_template
@@ -21,8 +22,37 @@ ma, ema, rsi, marsi = 5, 3, 14, 5
 current_file_path = os.path.dirname(os.path.abspath(__file__))
 data_file_path = os.path.join(current_file_path, "data.csv")
 all_stocks_file_path = os.path.join(current_file_path, "all.csv")
+time_records_file_path = os.path.join(current_file_path, "time_records.json")
 
 app = Flask(__name__)
+
+
+def get_time_records():
+    """Get time records."""
+    try:
+        with open(time_records_file_path, "r") as f:
+            time_records = json.load(f)
+    except FileNotFoundError:
+        time_records = {}
+    return time_records
+
+
+def set_time_record(entry, value):
+    """Set time record."""
+    try:
+        with open(time_records_file_path, "r") as f:
+            time_records = json.load(f)
+    except FileNotFoundError:
+        time_records = {}
+
+    time_records[entry] = value
+
+    with open(time_records_file_path, "w") as f:
+        json.dump(time_records, f)
+
+
+def get_current_time():
+    return datetime.now(pytz.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 
 @app.route("/")
@@ -45,12 +75,22 @@ def home():
         newH = 0
         newL = 0
 
+    try:
+        time_records = get_time_records()
+        last_triggered = time_records.get("last_triggered", "N/A")
+        last_filtered = time_records.get("last_filtered", "N/A")
+    except FileNotFoundError:
+        last_triggered = "N/A"
+        last_filtered = "N/A"
+
     return render_template(
         "home.html",
         vn30f1m=data,
         total=total,
         newH=newH,
         newL=newL,
+        last_triggered=last_triggered,
+        last_filtered=last_filtered,
     )
 
 
@@ -79,7 +119,8 @@ def trigger():
         app.logger.info(f"Discord response: {resp.status_code}")
 
     data.to_csv(data_file_path)
-    return f"[{datetime.now(pytz.utc)}] {triggered} {msg}"
+    set_time_record("last_triggered", get_current_time())
+    return f"[{get_current_time()}] {triggered} {msg}"
 
 
 @app.route("/filter")
@@ -87,7 +128,8 @@ def filter():
     """Get filtered data."""
     all = stock_screening_insights({"exchangeName": "HOSE,HNX,UPCOM"})
     all.to_csv(all_stocks_file_path)
-    return f"[{datetime.now(pytz.utc)}] Filtered data saved. Total: {len(all)}"
+    set_time_record("last_filtered", get_current_time())
+    return f"[{get_current_time()}] Filtered data saved. Total: {len(all)}"
 
 
 if __name__ == "__main__":

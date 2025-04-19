@@ -28,10 +28,12 @@
     <main>
         <section id="vn30f1m">
             <h2>Signal table</h2>
+            <div>Last trigger: {{ last_triggered }}</div>
             {{ vn30f1m.tail(20).to_html()|safe }}
         </section>
         <section id="vnstock">
             <h2>VNStock</h2>
+            <div>Last filtered: {{ last_filtered }}</div>
             <table>
                 <tr>
                     <th></th>
