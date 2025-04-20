@@ -9,7 +9,7 @@ from builder import data_builder, signal_builder
 from const import TYPE_DERIVATIVE, VN30_DISCORD_URL
 from discord import send_discord
 from tcbs import stock_screening_insights
-from utils import format_dataframe
+from utils import format_dataframe, highlight_signals, highlight_stocks
 
 os.environ["TZ"] = "Asia/Ho_Chi_Minh"
 if hasattr(time, "tzset"):
@@ -62,7 +62,8 @@ def home():
     from pandas import read_csv
 
     try:
-        data = read_csv(data_file_path)
+        data = read_csv(data_file_path).set_index("time")
+        data = format_dataframe(data.tail(10), highlight_signals)
     except FileNotFoundError:
         data = "No data available."
 
@@ -86,6 +87,7 @@ def home():
             & True,
             [
                 "ticker",
+                "hasFinancialReport.en",
                 "revenueGrowth1Year",
                 "revenueGrowth5Year",
                 "epsGrowth1Year",
@@ -95,15 +97,16 @@ def home():
                 "netMargin",
                 "profitForTheLast4Quarters",
                 "avgTradingValue5Day",
-                "hasFinancialReport.en",
                 "relativeStrength3Day",
                 "relativeStrength1Month",
             ],
         ].set_index("ticker")
+        growth = format_dataframe(growth.sort_values(by='hasFinancialReport.en', ascending=False), highlight_stocks)
     except FileNotFoundError:
         total = 0
         newH = 0
         newL = 0
+        growth = "No data available."
 
     try:
         time_records = get_time_records()
@@ -115,7 +118,7 @@ def home():
 
     return render_template(
         "home.html",
-        vn30f1m=format_dataframe(data.tail(10)),
+        vn30f1m=data,
         total=total,
         newH=newH,
         newL=newL,
