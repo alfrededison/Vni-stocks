@@ -7,5 +7,8 @@ DISCORD_POSITIVE_COLOR = 43127
 DISCORD_NEGATIVE_COLOR = 15859772
 DISCORD_NEUTRAL_COLOR = 0
 
+WEBSITE_FEED_URL = "https://alfrededison.helioho.st/vn30/feed"
+WEBSITE_VN30_URL = "https://alfrededison.helioho.st/vn30"
+
 TYPE_STOCK = "stock"
 TYPE_DERIVATIVE = "derivative"

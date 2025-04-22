@@ -1,13 +1,14 @@
 import json
 import pytz
 from datetime import datetime
-from flask import Flask, render_template
+from flask import Flask, make_response, render_template
 import os
 import time
 
 from builder import data_builder, signal_builder
-from const import TYPE_DERIVATIVE, VN30_DISCORD_URL
+from const import TYPE_DERIVATIVE, VN30_DISCORD_URL, WEBSITE_FEED_URL, WEBSITE_VN30_URL
 from discord import send_discord
+from rfeed import Feed, Item
 from tcbs import stock_screening_insights
 from utils import format_dataframe
 
@@ -26,6 +27,8 @@ all_stocks_file_path = os.path.join(current_file_path, "all.csv")
 time_records_file_path = os.path.join(current_file_path, "time_records.json")
 
 app = Flask(__name__)
+
+feeds = []
 
 
 def get_time_records():
@@ -118,6 +121,7 @@ def trigger():
     if triggered:
         resp = send_discord(VN30_DISCORD_URL, msg)
         app.logger.info(f"Discord response: {resp.status_code}")
+        feeds.append(Item(title=title, description=msg, link=WEBSITE_VN30_URL))
 
     data.to_csv(data_file_path)
     set_time_record("last_triggered", get_current_time())
@@ -131,6 +135,22 @@ def filter():
     all.to_csv(all_stocks_file_path)
     set_time_record("last_filtered", get_current_time())
     return f"[{get_current_time()}] Filtered data saved. Total: {len(all)}"
+
+
+@app.route("/feed")
+def feed():
+    """Get RSS feed."""
+    feed = Feed(
+        title="VN30F1M Signals",
+        link=WEBSITE_FEED_URL,
+        description="VN30F1M Signals",
+        language="en",
+        lastBuildDate=datetime.now(pytz.utc),
+        items=feeds,
+    )
+    response = make_response(feed.rss())
+    response.headers["Content-Type"] = "application/rss+xml"
+    return response
 
 
 if __name__ == "__main__":
