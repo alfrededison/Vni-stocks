@@ -34,28 +34,7 @@
         <section id="vnstock">
             <h2>VNStock</h2>
             <div>Last filtered: {{ last_filtered }}</div>
-            <table>
-                <tr>
-                    <th></th>
-                    <th>Value</th>
-                </tr>
-                <tr>
-                    <td>Total</td>
-                    <td>{{ total }}</td>
-                </tr>
-                <tr>
-                    <td>NewH</td>
-                    <td>{{ newH }}</td>
-                </tr>
-                <tr>
-                    <td>NewL</td>
-                    <td>{{ newL }}</td>
-                </tr>
-                <tr>
-                    <td>NewHL</td>
-                    <td>{{ newH - newL }}</td>
-                </tr>
-            </table>
+            <div>Total: <strong>{{ total }}</strong></div>
             {{ filtered_stocks.to_html()|safe }}
 
     </main>

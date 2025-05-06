@@ -70,8 +70,6 @@ def home():
     try:
         stocks = read_csv(all_stocks_file_path)
         total = len(stocks)
-        newH = len(stocks.loc[stocks.percent1YearFromPeak > 0])
-        newL = len(stocks.loc[stocks.percent1YearFromBottom < 0])
 
         growth = stocks.loc[
             True
@@ -104,8 +102,6 @@ def home():
         growth = format_dataframe(growth.sort_values(by='hasFinancialReport.en', ascending=False), highlight_stocks)
     except FileNotFoundError:
         total = 0
-        newH = 0
-        newL = 0
         growth = "No data available."
 
     try:
@@ -120,8 +116,6 @@ def home():
         "home.html",
         vn30f1m=data,
         total=total,
-        newH=newH,
-        newL=newL,
         last_triggered=last_triggered,
         last_filtered=last_filtered,
         filtered_stocks=growth,
