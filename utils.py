@@ -20,21 +20,21 @@ def highlight_signals(row: pd.Series):
         styles[idx["Sell"]] = NEGATIVE_BACKGROUND
         styles[idx["close"]] = NEGATIVE_BACKGROUND
 
-    sma = row["SMA_5"]
-    ema = row["EMA_3"]
+    sma = row["sma_5"]
+    ema = row["ema_3"]
     if pd.notna(sma) and pd.notna(ema):
         if sma > ema:
-            styles[idx["SMA_5"]] += NEGATIVE_TEXT
+            styles[idx["sma_5"]] += NEGATIVE_TEXT
         elif ema > sma:
-            styles[idx["EMA_3"]] += POSITIVE_TEXT
+            styles[idx["ema_3"]] += POSITIVE_TEXT
 
-    rsi = row["RSI_14"]
-    marsi = row["MARSI"]
+    rsi = row["rsi"]
+    marsi = row["MA-RSI"]
     if pd.notna(rsi) and pd.notna(marsi):
         if rsi > marsi:
-            styles[idx["RSI_14"]] += POSITIVE_TEXT
+            styles[idx["rsi"]] += POSITIVE_TEXT
         elif marsi > rsi:
-            styles[idx["MARSI"]] += NEGATIVE_TEXT
+            styles[idx["MA-RSI"]] += NEGATIVE_TEXT
 
     return styles
 

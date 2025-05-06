@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-import pandas_ta as ta
+import ta
 
 from const import DISCORD_POSITIVE_COLOR, DISCORD_NEGATIVE_COLOR, DISCORD_NEUTRAL_COLOR
 from vci import history as vci_history
@@ -12,15 +12,15 @@ def get_past_date(x):
 
 
 def emamarsi(close, ma, ema, rsi, marsi):
-    sma_ = ta.sma(close, length=ma)
-    ema_ = ta.ema(close, length=ema)
-    rsi_ = ta.rsi(close, length=rsi)
-    marsi_ = ta.sma(rsi_, length=marsi)
+    sma_ = ta.trend.SMAIndicator(close, ma).sma_indicator()
+    ema_ = ta.trend.EMAIndicator(close, ema).ema_indicator()
+    rsi_ = ta.momentum.RSIIndicator(close, rsi).rsi()
+    marsi_ = ta.trend.SMAIndicator(rsi_, marsi).sma_indicator()
 
-    price_up = ta.roc(close, length=1) > 0
-    rsi_up = ta.above(rsi_, marsi_)
-    buy = ta.cross(ema_, sma_) & rsi_up & price_up.astype(int)
-    sell = ta.cross(sma_, ema_)
+    price_up = ta.momentum.ROCIndicator(close, 1).roc() > 0
+    rsi_up = rsi_ > marsi_
+    buy = ta.utils.crossed_above(ema_, sma_) & rsi_up & price_up
+    sell = ta.utils.crossed_below(ema_, sma_)
     return sma_, ema_, rsi_, marsi_, buy, sell
 
 
@@ -60,7 +60,7 @@ def data_builder(source, symbol, asset_type, since, to, interval, ma, ema, rsi, 
             sma_,
             ema_,
             rsi_,
-            marsi_.rename("MARSI"),
+            marsi_.rename("MA-RSI"),
             buy.rename("Buy"),
             sell.rename("Sell"),
         ]
