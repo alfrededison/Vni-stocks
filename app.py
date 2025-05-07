@@ -63,9 +63,27 @@ def home():
 
     try:
         data = read_csv(data_file_path).set_index("time")
-        data = format_dataframe(data.tail(10), highlight_signals)
+        data = format_dataframe(data.tail(10), highlight_signals).to_html()
     except FileNotFoundError:
         data = "No data available."
+
+    try:
+        time_records = get_time_records()
+        last_triggered = time_records.get("last_triggered", "N/A")
+    except FileNotFoundError:
+        last_triggered = "N/A"
+
+    return render_template(
+        "home.html",
+        vn30f1m=data,
+        last_triggered=last_triggered,
+    )
+
+
+@app.route("/stocks")
+def stocks():
+    """Show filter stocks."""
+    from pandas import read_csv
 
     try:
         stocks = read_csv(all_stocks_file_path)
@@ -99,24 +117,23 @@ def home():
                 "relativeStrength1Month",
             ],
         ].set_index("ticker")
-        growth = format_dataframe(growth.sort_values(by='hasFinancialReport.en', ascending=False), highlight_stocks)
+        growth = format_dataframe(
+            growth.sort_values(by="hasFinancialReport.en", ascending=False),
+            highlight_stocks,
+        ).to_html()
     except FileNotFoundError:
         total = 0
         growth = "No data available."
 
     try:
         time_records = get_time_records()
-        last_triggered = time_records.get("last_triggered", "N/A")
         last_filtered = time_records.get("last_filtered", "N/A")
     except FileNotFoundError:
-        last_triggered = "N/A"
         last_filtered = "N/A"
 
     return render_template(
-        "home.html",
-        vn30f1m=data,
+        "stocks.html",
         total=total,
-        last_triggered=last_triggered,
         last_filtered=last_filtered,
         filtered_stocks=growth,
     )

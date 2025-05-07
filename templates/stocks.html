@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>VNStock - VN30</title>
+    <title>VNStock - Stocks</title>
     <style>
         table {
             border-collapse: collapse;
@@ -26,11 +26,11 @@
 
 <body>
     <main>
-        <section id="vn30f1m">
-            <h2>Signal table</h2>
-            <div>Last trigger: {{ last_triggered }}</div>
-            {{ vn30f1m|safe }}
-        </section>
+        <section id="vnstock">
+            <h2>VNStock</h2>
+            <div>Last filtered: {{ last_filtered }}</div>
+            <div>Total: <strong>{{ total }}</strong></div>
+            {{ filtered_stocks|safe }}
     </main>
 
     <footer>
