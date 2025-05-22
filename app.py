@@ -17,7 +17,7 @@ if hasattr(time, "tzset"):
 
 _VN30 = "VN30F1M"
 
-start, end, interval = 30, -1, "1H"
+start, end, interval = 50, -1, "1H"
 ma, ema, rsi, marsi = 5, 3, 14, 5
 
 current_file_path = os.path.dirname(os.path.abspath(__file__))
@@ -62,10 +62,10 @@ def home():
     from pandas import read_csv
 
     try:
-        data = read_csv(data_file_path).set_index("time")
-        data = format_dataframe(data.tail(10), highlight_signals).to_html()
+        data = read_csv(data_file_path)
+        vn30f1m = format_dataframe(data.set_index("time").tail(10), highlight_signals).to_html()
     except FileNotFoundError:
-        data = "No data available."
+        vn30f1m = "No data available."
 
     try:
         time_records = get_time_records()
@@ -75,7 +75,8 @@ def home():
 
     return render_template(
         "home.html",
-        vn30f1m=data,
+        data=data.to_json(orient="records"),
+        vn30f1m=vn30f1m,
         last_triggered=last_triggered,
     )
 

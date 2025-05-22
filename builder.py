@@ -57,10 +57,10 @@ def data_builder(source, symbol, asset_type, since, to, interval, ma, ema, rsi, 
 
     updated_data = raw_data.join(
         [
-            sma_,
-            ema_,
-            rsi_,
-            marsi_.rename("MA-RSI"),
+            sma_.rename("sma"),
+            ema_.rename("ema"),
+            rsi_.rename("rsi"),
+            marsi_.rename("ma_rsi"),
             buy.rename("Buy"),
             sell.rename("Sell"),
         ]
