@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useContext } from 'react';
 import Plot from 'react-plotly.js';
 import { getSignals, triggerDataRetrieval } from '../api';
+import { LoadingContext } from '../contexts/LoadingContext';
 
 // Helper function to format numbers to 2 decimal places
 function formatNumber(value) {
@@ -22,13 +23,17 @@ function getCellClass(row, col) {
 
 const Home = () => {
     const [data, setData] = useState({});
+    const { setLoading } = useContext(LoadingContext);
 
     const updateData = async () => {
+        setLoading(true);
         const signals = await getSignals();
         setData(signals);
+        setLoading(false);
     };
 
     const triggerUpdate = async () => {
+        setLoading(true);
         const response = await triggerDataRetrieval();
         alert(response.message || 'Data retrieval triggered ERROR');
         updateData();

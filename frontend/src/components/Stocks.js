@@ -1,15 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { filterStocks, getStocks } from '../api';
+import { LoadingContext } from '../contexts/LoadingContext';
 
 const Stocks = () => {
     const [data, setData] = useState([]);
+    const { setLoading } = useContext(LoadingContext);
 
     const updateData = async () => {
+        setLoading(true);
         const signals = await getStocks();
         setData(signals);
+        setLoading(false);
     };
 
     const triggerUpdate = async () => {
+        setLoading(true);
         const response = await filterStocks();
         alert(response.message || 'Stock filter triggered ERROR');
         updateData();
