@@ -1,0 +1,35 @@
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+    border: 1px solid #ddd;
+    margin-top: 1rem;
+}
+
+th,
+td {
+    text-align: left;
+    padding: 16px;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.positive-bg {
+    background-color: lightgreen;
+}
+
+.negative-bg {
+    background-color: lightcoral;
+}
+
+.positive-text {
+    color: #388e3c;
+    font-weight: bold;
+}
+
+.negative-text {
+    color: #d32f2f;
+    font-weight: bold;
+}

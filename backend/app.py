@@ -1,15 +1,16 @@
 import json
 import pytz
 from datetime import datetime
-from flask import Flask, render_template
+from flask import Flask
 import os
 import time
+from pandas import read_csv
+from flask_cors import CORS
 
 from builder import data_builder, signal_builder
 from const import TYPE_DERIVATIVE, VN30_DISCORD_URL
 from discord import send_discord
 from tcbs import stock_screening_insights
-from utils import format_dataframe, highlight_signals, highlight_stocks
 
 os.environ["TZ"] = "Asia/Ho_Chi_Minh"
 if hasattr(time, "tzset"):
@@ -26,10 +27,10 @@ all_stocks_file_path = os.path.join(current_file_path, "all.csv")
 time_records_file_path = os.path.join(current_file_path, "time_records.json")
 
 app = Flask(__name__)
+CORS(app)
 
 
 def get_time_records():
-    """Get time records."""
     try:
         with open(time_records_file_path, "r") as f:
             time_records = json.load(f)
@@ -39,7 +40,6 @@ def get_time_records():
 
 
 def set_time_record(entry, value):
-    """Set time record."""
     try:
         with open(time_records_file_path, "r") as f:
             time_records = json.load(f)
@@ -56,36 +56,29 @@ def get_current_time():
     return datetime.now(pytz.utc).strftime("%Y-%m-%d %H:%M:%S")
 
 
-@app.route("/")
-def home():
-    """Show status."""
-    from pandas import read_csv
-
+@app.route("/signals")
+def get_signals_data():
     try:
         data = read_csv(data_file_path)
-        vn30f1m = format_dataframe(data.set_index("time").tail(10), highlight_signals).to_html()
+        total = len(data)
+        data = data.fillna("N/A").to_dict(orient="records")
     except FileNotFoundError:
-        vn30f1m = "No data available."
+        total = 0
+        data = []
 
-    try:
-        time_records = get_time_records()
-        last_triggered = time_records.get("last_triggered", "N/A")
-    except FileNotFoundError:
-        last_triggered = "N/A"
+    time_records = get_time_records()
+    last_triggered = time_records.get("last_triggered", "N/A")
 
-    return render_template(
-        "home.html",
-        data=data.to_json(orient="records"),
-        vn30f1m=vn30f1m,
-        last_triggered=last_triggered,
-    )
+    return {
+        "total": total,
+        "data": data,
+        "last_triggered": last_triggered,
+    }
+
 
 
 @app.route("/stocks")
-def stocks():
-    """Show filter stocks."""
-    from pandas import read_csv
-
+def get_stocks():
     try:
         stocks = read_csv(all_stocks_file_path)
         total = len(stocks)
@@ -117,32 +110,24 @@ def stocks():
                 "relativeStrength3Day",
                 "relativeStrength1Month",
             ],
-        ].set_index("ticker")
-        growth = format_dataframe(
-            growth.sort_values(by="hasFinancialReport.en", ascending=False),
-            highlight_stocks,
-        ).to_html()
+        ]
+        filtered_stocks = growth.fillna("N/A").to_dict(orient="records")
     except FileNotFoundError:
         total = 0
-        growth = "No data available."
+        filtered_stocks = []
 
-    try:
-        time_records = get_time_records()
-        last_filtered = time_records.get("last_filtered", "N/A")
-    except FileNotFoundError:
-        last_filtered = "N/A"
+    time_records = get_time_records()
+    last_filtered = time_records.get("last_filtered", "N/A")
 
-    return render_template(
-        "stocks.html",
-        total=total,
-        last_filtered=last_filtered,
-        filtered_stocks=growth,
-    )
+    return {
+        "total": total,
+        "filtered_stocks": filtered_stocks,
+        "last_filtered": last_filtered,
+    }
 
 
-@app.route("/trigger")
-def trigger():
-    """Trigger the job."""
+@app.route("/build")
+def build_signals():
     title = f"Strategy: EMA({ema}) SMA({ma}) RSI({rsi}) MARSI({marsi})"
     data = data_builder(
         "tcbs",
@@ -160,22 +145,36 @@ def trigger():
     triggered, msg = signal_builder(_VN30, title, data)
     app.logger.info(f"Signal: {triggered} {msg}")
 
+    data.to_csv(data_file_path)
+    set_time_record("last_triggered", get_current_time())
+    return {
+        "triggered": triggered,
+        "message": f"[{get_current_time()}] {triggered} {msg}",
+    }
+
+
+@app.route("/trigger")
+def trigger():
+    _signals = build_signals()
+    triggered = _signals["triggered"]
+    msg = _signals["message"]
+
     if triggered:
         resp = send_discord(VN30_DISCORD_URL, msg)
         app.logger.info(f"Discord response: {resp.status_code}")
 
-    data.to_csv(data_file_path)
-    set_time_record("last_triggered", get_current_time())
-    return f"[{get_current_time()}] {triggered} {msg}"
+    return _signals
 
 
 @app.route("/filter")
 def filter():
-    """Get filtered data."""
     all = stock_screening_insights({"exchangeName": "HOSE,HNX,UPCOM"})
     all.to_csv(all_stocks_file_path)
     set_time_record("last_filtered", get_current_time())
-    return f"[{get_current_time()}] Filtered data saved. Total: {len(all)}"
+    return {
+        "total": len(all),
+        "message": f"[{get_current_time()}] Filtered data saved.",
+    }
 
 
 if __name__ == "__main__":
