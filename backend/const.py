@@ -1,7 +1,9 @@
-VN30_DISCORD_URL = (
-    "https://discord.com/api/webhooks/1248546907534528532/"
-    "AJxoxGHJoZRt1zGobHoH6U-ZhM0ETHqg8bUgyu3BhxcSNKFG_ucYmIsQjyL_Cx5J8Cv0"
-)
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+VN30_DISCORD_URL = os.getenv("VN30_DISCORD_URL")
 
 DISCORD_POSITIVE_COLOR = 43127
 DISCORD_NEGATIVE_COLOR = 15859772
