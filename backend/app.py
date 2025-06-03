@@ -9,7 +9,7 @@ from flask_cors import CORS
 
 from builder import data_builder, signal_builder
 from const import TYPE_DERIVATIVE, VN30_DISCORD_URL
-from discord import send_discord
+from discord import build_discord, send_discord
 from tcbs import stock_screening_insights
 
 os.environ["TZ"] = "Asia/Ho_Chi_Minh"
@@ -76,7 +76,6 @@ def get_signals_data():
     }
 
 
-
 @app.route("/stocks")
 def get_stocks():
     try:
@@ -128,7 +127,6 @@ def get_stocks():
 
 @app.route("/build")
 def build_signals():
-    title = f"Strategy: EMA({ema}) SMA({ma}) RSI({rsi}) MARSI({marsi})"
     data = data_builder(
         "tcbs",
         _VN30,
@@ -142,14 +140,14 @@ def build_signals():
         marsi,
     )
 
-    triggered, msg = signal_builder(_VN30, title, data)
-    app.logger.info(f"Signal: {triggered} {msg}")
+    triggered, pkg = signal_builder(_VN30, data)
+    app.logger.info(f"Signal: {triggered} {pkg}")
 
     data.to_csv(data_file_path)
     set_time_record("last_triggered", get_current_time())
     return {
         "triggered": triggered,
-        "message": f"[{get_current_time()}] {triggered} {msg}",
+        **pkg,
     }
 
 
@@ -157,10 +155,18 @@ def build_signals():
 def trigger():
     _signals = build_signals()
     triggered = _signals["triggered"]
-    msg = _signals["message"]
 
     if triggered:
-        resp = send_discord(VN30_DISCORD_URL, msg)
+        title = f"Strategy: EMA({ema}) SMA({ma}) RSI({rsi}) MARSI({marsi})"
+        discord_data = build_discord(
+            title,
+            _signals["action"],
+            _signals["content"],
+            _signals["description"],
+        )
+        app.logger.info(f"Discord data: {discord_data}")
+
+        resp = send_discord(VN30_DISCORD_URL, discord_data)
         app.logger.info(f"Discord response: {resp.status_code}")
 
     return _signals

@@ -35,7 +35,7 @@ const Home = () => {
     const triggerUpdate = async () => {
         setLoading(true);
         const response = await triggerDataRetrieval();
-        alert(response.message || 'Data retrieval triggered ERROR');
+        alert(response.description || 'Data retrieval triggered ERROR');
         updateData();
     };
 

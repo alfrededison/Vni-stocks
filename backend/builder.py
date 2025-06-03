@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import ta
 
-from const import DISCORD_POSITIVE_COLOR, DISCORD_NEGATIVE_COLOR, DISCORD_NEUTRAL_COLOR
+from const import ACTION_BUY, ACTION_SELL
 from vci import history as vci_history
 from tcbs import history as tcbs_history
 
@@ -68,34 +68,25 @@ def data_builder(source, symbol, asset_type, since, to, interval, ma, ema, rsi, 
     return updated_data
 
 
-def signal_builder(symbol, title, data):
+def signal_builder(symbol, data):
     """Build signal message for Discord."""
     time = data.index[-1]
     price = data.close.iloc[-1]
     is_buy = bool(data.Buy.iloc[-1])
     is_sell = bool(data.Sell.iloc[-1])
 
-    action = "BUY" if is_buy else "SELL" if is_sell else None
+    action = ACTION_BUY if is_buy else ACTION_SELL if is_sell else None
 
     if action is None:
-        return False, f"__{time}__ {symbol} No signal"
+        return False, {
+            "description": f"__{time}__ {symbol} No signal",
+        }
 
-    color = (
-        DISCORD_POSITIVE_COLOR
-        if is_buy
-        else DISCORD_NEGATIVE_COLOR if is_sell else DISCORD_NEUTRAL_COLOR
-    )
     content = f"*{symbol}* **{action}** {price}"
-    description = f"__{time}__ **{action}** @ {price}"
+    description = f"__{time}__ {symbol} **{action}** @ {price}"
 
     return True, {
-        "username": "Signal BOT",
+        "action": action,
         "content": content,
-        "embeds": [
-            {
-                "title": title,
-                "description": description,
-                "color": color,
-            },
-        ],
+        "description": description,
     }
