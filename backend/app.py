@@ -8,8 +8,8 @@ from pandas import read_csv
 from flask_cors import CORS
 
 from builder import data_builder, signal_builder
-from const import TYPE_DERIVATIVE, VN30_DISCORD_URL
-from discord import build_discord, send_discord
+from const import TYPE_DERIVATIVE, EMAIL_RECEIVERS
+from send_mail import build_email_data, send_email
 from tcbs import stock_screening_insights
 
 os.environ["TZ"] = "Asia/Ho_Chi_Minh"
@@ -158,16 +158,15 @@ def trigger():
 
     if triggered:
         title = f"Strategy: EMA({ema}) SMA({ma}) RSI({rsi}) MARSI({marsi})"
-        discord_data = build_discord(
-            title,
+        noti_data = build_email_data(
             _signals["action"],
             _signals["content"],
             _signals["description"],
         )
-        app.logger.info(f"Discord data: {discord_data}")
-
-        resp = send_discord(VN30_DISCORD_URL, discord_data)
-        app.logger.info(f"Discord response: {resp.status_code}")
+        app.logger.info(f"Notification data: {noti_data}")
+        for email in EMAIL_RECEIVERS.split(","):
+            send_email(email, title, noti_data)
+            app.logger.info(f"Email sent to: {email}")
 
     return _signals
 
