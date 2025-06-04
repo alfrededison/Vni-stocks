@@ -175,9 +175,6 @@ const Home = () => {
             <table>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Source</th>
                         <th>Time</th>
                         <th>Open</th>
                         <th>High</th>
@@ -195,9 +192,6 @@ const Home = () => {
                 <tbody>
                     {data.data?.slice(-10).map((row, idx) => (
                         <tr key={idx}>
-                            <td>{row.name}</td>
-                            <td>{row.category}</td>
-                            <td>{row.source}</td>
                             <td><strong>{row.time}</strong></td>
                             <td>{formatNumber(row.open)}</td>
                             <td>{formatNumber(row.high)}</td>
