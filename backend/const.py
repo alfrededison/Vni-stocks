@@ -3,6 +3,7 @@ import os
 
 load_dotenv()
 
+ENVIRONMENT = os.getenv("ENVIRONMENT")
 VN30_DISCORD_URL = os.getenv("VN30_DISCORD_URL")
 
 DISCORD_POSITIVE_COLOR = 43127

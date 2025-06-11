@@ -8,7 +8,7 @@ from pandas import read_csv
 from flask_cors import CORS
 
 from builder import data_builder, signal_builder
-from const import TYPE_DERIVATIVE, EMAIL_RECEIVERS
+from const import ENVIRONMENT, TYPE_DERIVATIVE, EMAIL_RECEIVERS
 from send_mail import build_email_data, send_email
 from tcbs import stock_screening_insights
 
@@ -54,6 +54,22 @@ def set_time_record(entry, value):
 
 def get_current_time():
     return datetime.now(pytz.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+
+@app.route("/env")
+def get_env():
+    env = {
+        "stock": _VN30,
+        "start": start,
+        "end": end,
+        "interval": interval,
+        "ma": ma,
+        "ema": ema,
+        "rsi": rsi,
+        "marsi": marsi,
+        "env": ENVIRONMENT,
+    }
+    return env
 
 
 @app.route("/signals")
