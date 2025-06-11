@@ -1,7 +1,11 @@
 Options +ExecCGI
-RewriteEngine On
-RewriteBase /
-RewriteRule ^(media/.*)$ - [L]
-RewriteRule ^(admin_media/.*)$ - [L]
-RewriteRule ^(flask\.wsgi/.*)$ - [L]
-RewriteRule ^(.*)$ vn30/flask.wsgi/$1 [QSA,PT,L]
+
+# RewriteEngine On
+# RewriteBase /
+# RewriteRule ^(media/.*)$ - [L]
+# RewriteRule ^(admin_media/.*)$ - [L]
+# RewriteRule ^(flask\.wsgi/.*)$ - [L]
+# RewriteRule ^(.*)$ vn30/flask.wsgi/$1 [QSA,PT,L]
+
+AddHandler cgi-script .py
+DirectoryIndex cgi_app.py
