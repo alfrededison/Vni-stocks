@@ -45,7 +45,7 @@ const Stocks = () => {
         <section id="vnstocks">
             <h1>Filtered Stocks</h1>
             <div>
-                <p>Last Filtered: {data.last_filtered}</p>
+                <p>Last Filtered: {data.last_filtered ?? 'N/A'} UTC</p>
                 <p>Total: <strong>{data.total}</strong></p>
             </div>
             <div>

@@ -9,6 +9,19 @@ function formatNumber(value) {
     return Number(value).toFixed(2);
 }
 
+function getTimezoneOffset() {
+    const date = new Date();
+    return -date.getTimezoneOffset() / 60; // Convert minutes to hours
+}
+
+function correctTime(time) {
+    if (!time) return '';
+    const date = new Date(time.replace(' ', 'T') + 'Z'); // Ensure UTC parsing
+    if (isNaN(date.getTime())) return ''; // Invalid date
+    date.setHours(date.getHours() + getTimezoneOffset()); // Adjust for local timezone
+    return date.toISOString().replace('T', ' ').substring(0, 19);
+}
+
 function getCellClass(row, col) {
     if (col === 'Buy' && row.Buy === true) return 'positive-bg';
     if (col === 'Sell' && row.Sell === true) return 'negative-bg';
@@ -174,7 +187,7 @@ const Home = () => {
         <section id="vn30f1m">
             <h2>Signal table</h2>
             <div>
-                <p>Last trigger: {data.last_triggered ?? 'N/A'}</p>
+                <p>Last trigger: {correctTime(data.last_triggered) ?? 'N/A'} UTC {getTimezoneOffset()}</p>
             </div>
             <div>
                 <button className='btn-refresh' onClick={triggerUpdate}>Refresh</button>
@@ -199,7 +212,7 @@ const Home = () => {
                 <tbody>
                     {data.data?.slice(-10).map((row, idx) => (
                         <tr key={idx}>
-                            <td><strong>{row.time}</strong></td>
+                            <td><strong>{correctTime(row.time)}</strong></td>
                             <td>{formatNumber(row.open)}</td>
                             <td>{formatNumber(row.high)}</td>
                             <td>{formatNumber(row.low)}</td>
