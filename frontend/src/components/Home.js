@@ -118,6 +118,13 @@ const Home = () => {
             title: { text: 'VN30F1M Chart' },
             height: 1000,
             grid: { rows: 1, columns: 1 },
+            legend: {
+                x: 0,
+                y: 0.05,
+                xanchor: 'left',
+                yanchor: 'bottom',
+                orientation: 'v'
+            },
             xaxis: {
                 title: 'Time',
                 type: 'category',
