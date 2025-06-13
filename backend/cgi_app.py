@@ -10,6 +10,7 @@ from handlers import (
     build_signals,
     trigger_signals,
     filter_stocks,
+    test_notify,
 )
 
 
@@ -43,6 +44,8 @@ def main():
         print(json.dumps(trigger_signals()))
     elif action == 'filter':
         print(json.dumps(filter_stocks()))
+    elif action == 'test_notify':
+        print(json.dumps(test_notify()))
     else:
         print(json.dumps({"error": "Unknown or missing action parameter"}))
 

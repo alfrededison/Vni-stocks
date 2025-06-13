@@ -8,6 +8,7 @@ from handlers import (
     build_signals,
     trigger_signals,
     filter_stocks,
+    test_notify,
 )
 
 app = Flask(__name__)
@@ -42,6 +43,11 @@ def trigger():
 @app.route("/filter")
 def filter():
     return filter_stocks()
+
+
+@app.route("/test-notify")
+def notify():
+    return test_notify()
 
 
 if __name__ == "__main__":

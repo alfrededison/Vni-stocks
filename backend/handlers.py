@@ -6,8 +6,8 @@ import time
 from pandas import read_csv
 
 from builder import data_builder, signal_builder
-from const import ENVIRONMENT, TYPE_DERIVATIVE, EMAIL_RECEIVERS
-from send_mail import build_email_data, send_email
+from const import ENVIRONMENT, TYPE_DERIVATIVE, NOTIFICATION_MODE
+from notifications import notify
 from tcbs import stock_screening_insights
 
 os.environ["TZ"] = "Asia/Ho_Chi_Minh"
@@ -62,6 +62,7 @@ def get_env():
         "rsi": rsi,
         "marsi": marsi,
         "env": ENVIRONMENT,
+        "notification_mode": NOTIFICATION_MODE,
     }
     return env
 
@@ -157,19 +158,22 @@ def build_signals():
     }
 
 
+def test_notify():
+    return notify("Vnstocks", "TEST", "Test content", "This is a test notification.")
+
+
 def trigger_signals():
     _signals = build_signals()
     triggered = _signals["triggered"]
 
     if triggered:
         title = f"Strategy: EMA({ema}) SMA({ma}) RSI({rsi}) MARSI({marsi})"
-        noti_data = build_email_data(
+        notify(
+            title,
             _signals["action"],
             _signals["content"],
             _signals["description"],
         )
-        for email in EMAIL_RECEIVERS.split(","):
-            send_email(email, title, noti_data)
 
     return _signals
 
