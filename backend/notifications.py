@@ -24,6 +24,15 @@ def notify(title, action, content, description):
             return {
                 "status": f"Email sent successfully to {EMAIL_RECEIVERS}",
             }
+        
+        case "onesignal":
+            from onesignal import build_onesignal_notification, send_onesignal_notification
+            data = build_onesignal_notification(title, description, action)
+            resp = send_onesignal_notification(data)
+            return {
+                "status_code": resp.status_code,
+                "response": resp.text,
+            }
 
         case _:
             raise ValueError(f"Unsupported notification mode: {NOTIFICATION_MODE}")

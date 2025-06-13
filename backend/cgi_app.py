@@ -44,7 +44,7 @@ def main():
         print(json.dumps(trigger_signals()))
     elif action == 'filter':
         print(json.dumps(filter_stocks()))
-    elif action == 'test_notify':
+    elif action == 'test-notify':
         print(json.dumps(test_notify()))
     else:
         print(json.dumps({"error": "Unknown or missing action parameter"}))
