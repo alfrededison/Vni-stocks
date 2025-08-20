@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Switch, Link } from 'react-router-dom';
 import Home from './components/Home';
 import Stocks from './components/Stocks';
 import { LoadingContext } from './contexts/LoadingContext';
+import 'reactjs-popup/dist/index.css';
 import './index.css';
 import './table.css';
 

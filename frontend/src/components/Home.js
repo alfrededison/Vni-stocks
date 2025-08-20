@@ -1,7 +1,11 @@
 import React, { useEffect, useState, useMemo, useContext } from 'react';
 import Plot from 'react-plotly.js';
+import Popup from 'reactjs-popup';
 import { getSignals, triggerDataRetrieval } from '../api';
 import { LoadingContext } from '../contexts/LoadingContext';
+
+const SL_RATIO = 0.012; // 1.2%
+const TP_RATIO = 0.02;  // 2%
 
 // Helper function to format numbers to 2 decimal places
 function formatNumber(value) {
@@ -222,7 +226,29 @@ const Home = () => {
                             <td className={getCellClass(row, 'ema')}>{formatNumber(row.ema)}</td>
                             <td className={getCellClass(row, 'rsi')}>{formatNumber(row.rsi)}</td>
                             <td className={getCellClass(row, 'ma_rsi')}>{formatNumber(row.ma_rsi)}</td>
-                            <td className={getCellClass(row, 'Buy')}>{row.Buy ? 'Yes' : 'No'}</td>
+                            <td className={getCellClass(row, 'Buy')}>
+                                {!row.Buy && 'No'}
+                                {row.Buy && (
+                                    <Popup
+                                        trigger={<span>Yes</span>}
+                                        position="top right"
+                                        on={['hover', 'focus']}
+                                        contentStyle={{maxWidth: 100}}
+                                    >
+                                        {() => {
+                                            const closeNum = Number(row.close);
+                                            const slVal = Number.isFinite(closeNum) ? closeNum * (1 - SL_RATIO) : null;
+                                            const tpVal = Number.isFinite(closeNum) ? closeNum * (1 + TP_RATIO) : null;
+                                            return (
+                                                <div>
+                                                    <p><strong>SL: </strong>{formatNumber(slVal)}</p>
+                                                    <p><strong>TP: </strong>{formatNumber(tpVal)}</p>
+                                                </div>
+                                            );
+                                        }}
+                                    </Popup>
+                                )}
+                            </td>
                             <td className={getCellClass(row, 'Sell')}>{row.Sell ? 'Yes' : 'No'}</td>
                         </tr>
                     ))}
