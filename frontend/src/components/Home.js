@@ -237,12 +237,12 @@ const Home = () => {
                                     >
                                         {() => {
                                             const closeNum = Number(row.close);
-                                            const slVal = Number.isFinite(closeNum) ? closeNum * (1 - SL_RATIO) : null;
-                                            const tpVal = Number.isFinite(closeNum) ? closeNum * (1 + TP_RATIO) : null;
+                                            const slVal = Number.isFinite(closeNum) ? closeNum * SL_RATIO : null;
+                                            const tpVal = Number.isFinite(closeNum) ? closeNum * TP_RATIO : null;
                                             return (
                                                 <div>
-                                                    <p><strong>SL: </strong>{formatNumber(slVal)}</p>
-                                                    <p><strong>TP: </strong>{formatNumber(tpVal)}</p>
+                                                    <p><strong>SL: </strong>{formatNumber(closeNum - slVal)} ({formatNumber(slVal)})</p>
+                                                    <p><strong>TP: </strong>{formatNumber(closeNum + tpVal)} ({formatNumber(tpVal)})</p>
                                                 </div>
                                             );
                                         }}
